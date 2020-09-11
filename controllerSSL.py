@@ -60,7 +60,7 @@ def main():
 									   ('/nucleo/admin/clientes/.*', 				GestionClientes),
 									   ('/nucleo/list/padres/.*', 					Padres),
 									   ('/nucleo/list/tiposmensajes/.*', 			TiposMensajes),
-									   ('/nucleo/.*', 										Bienvenido), ],
+									   ('/nucleo/.*', 								Bienvenido), ],
 									   debug=True)
 	wsgiref.handlers.CGIHandler().run(application)
 
