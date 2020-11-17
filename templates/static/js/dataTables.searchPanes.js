@@ -1,4 +1,4 @@
-/*! SearchPanes 1.2.0
+/*! SearchPanes 1.2.1
  * 2019-2020 SpryMedia Ltd - datatables.net/license
  */
 (function () {
@@ -134,7 +134,7 @@
                 if (settings.nTable !== tableNode) {
                     return true;
                 }
-                var filter = '';
+                var filter = null;
                 if (_this.colExists) {
                     // Get the current filtered data
                     filter = searchData[_this.s.index];
@@ -775,7 +775,7 @@
                                 pill = '';
                             }
                             return '<div class="' + _this.classes.nameCont + '"><span title="' +
-                                data +
+                                (typeof data === 'string' && data.match(/<[^>]*>/) !== null ? data.replace(/<[^>]*>/g, '') : data) +
                                 '" class="' + _this.classes.name + '">' +
                                 data + '</span>' +
                                 pill + '</div>';
@@ -1148,6 +1148,9 @@
             }
             else {
                 var filter = settings.oApi._fnGetCellData(settings, rowIdx, this.s.index, colOpts.orthogonal.search);
+                if (typeof filter === 'string') {
+                    filter = filter.replace(/<[^>]*>/g, '');
+                }
                 this.s.rowData.filterMap.set(rowIdx, filter);
                 if (!bins[filter]) {
                     bins[filter] = 1;
@@ -1228,7 +1231,10 @@
                     }
                 }
                 // otherwise if the two filter values are equal then return true
-                else if (filter === colSelect.filter) {
+                // Loose type checking incase number type in column comparing to a string
+                else if ((filter === colSelect.filter) ||
+                    (!(typeof filter === 'string' && filter.length === 0) && filter == colSelect.filter) ||
+                    (colSelect.filter === null && typeof filter === 'string' && filter === '')) {
                     return true;
                 }
             }
@@ -1515,6 +1521,7 @@
                 panes: [],
                 selectionList: [],
                 serverData: {},
+                stateRead: false,
                 updating: false
             };
             if (table.settings()[0]._searchPanes !== undefined) {
@@ -2152,8 +2159,8 @@
             this._attachExtras();
             $$1(this.dom.container).append(this.dom.panes);
             $$1(this.dom.panes).empty();
+            var loadedFilter = this.s.dt.state.loaded();
             if (this.c.viewTotal && !this.c.cascadePanes) {
-                var loadedFilter = this.s.dt.state.loaded();
                 if (loadedFilter !== null &&
                     loadedFilter !== undefined &&
                     loadedFilter.searchPanes !== undefined &&
@@ -2183,6 +2190,12 @@
             if (!this.s.dt.page.info().serverSide) {
                 this.s.dt.draw();
             }
+            // Reset the paging if that has been saved in the state
+            if (!this.s.stateRead && loadedFilter !== null && loadedFilter !== undefined) {
+                this.s.dt.page((loadedFilter.start / this.s.dt.page.len()));
+                this.s.dt.draw('page');
+            }
+            this.s.stateRead = true;
             if (this.c.viewTotal && !this.c.cascadePanes) {
                 for (var _f = 0, _g = this.s.panes; _f < _g.length; _f++) {
                     var pane = _g[_f];
@@ -2385,7 +2398,7 @@
             }
             this.s.dt.state.save();
         };
-        SearchPanes.version = '1.2.0';
+        SearchPanes.version = '1.2.1';
         SearchPanes.classes = {
             clear: 'dtsp-clear',
             clearAll: 'dtsp-clearAll',
@@ -2414,7 +2427,7 @@
         return SearchPanes;
     }());
 
-    /*! SearchPanes 1.2.0
+    /*! SearchPanes 1.2.1
      * 2019-2020 SpryMedia Ltd - datatables.net/license
      */
     // DataTables extensions common UMD. Note that this allows for AMD, CommonJS
@@ -2451,42 +2464,29 @@
         $.fn.DataTable.SearchPanes = SearchPanes;
         $.fn.dataTable.SearchPane = SearchPane;
         $.fn.DataTable.SearchPane = SearchPane;
-        DataTable.Api.register('searchPanes.rebuild()', function () {
-            return this.iterator('table', function () {
-                if (this.searchPanes) {
-                    this.searchPanes.rebuild();
-                }
-            });
-        });
-        DataTable.Api.register('column().paneOptions()', function (options) {
-            return this.iterator('column', function (idx) {
-                var col = this.aoColumns[idx];
-                if (!col.searchPanes) {
-                    col.searchPanes = {};
-                }
-                col.searchPanes.values = options;
-                if (this.searchPanes) {
-                    this.searchPanes.rebuild();
-                }
-            });
-        });
         var apiRegister = $.fn.dataTable.Api.register;
         apiRegister('searchPanes()', function () {
             return this;
         });
         apiRegister('searchPanes.clearSelections()', function () {
-            var ctx = this.context[0];
-            ctx._searchPanes.clearSelections();
-            return this;
+            return this.iterator('table', function (ctx) {
+                if (ctx._searchPanes) {
+                    ctx._searchPanes.clearSelections();
+                }
+            });
         });
         apiRegister('searchPanes.rebuildPane()', function (targetIdx, maintainSelections) {
-            var ctx = this.context[0];
-            ctx._searchPanes.rebuild(targetIdx, maintainSelections);
-            return this;
+            return this.iterator('table', function (ctx) {
+                if (ctx._searchPanes) {
+                    ctx._searchPanes.rebuild(targetIdx, maintainSelections);
+                }
+            });
         });
         apiRegister('searchPanes.container()', function () {
             var ctx = this.context[0];
-            return ctx._searchPanes.getNode();
+            return ctx._searchPanes
+                ? ctx._searchPanes.getNode()
+                : null;
         });
         $.fn.dataTable.ext.buttons.searchPanesClear = {
             text: 'Clear Panes',
