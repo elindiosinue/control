@@ -12,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: python39
-
-#[START env]
-env_variables:
-  PUBSUB_TOPIC: '<YOUR_TOPIC>'
-  # This token is used to verify that requests originate from your
-  # application. It can be any sufficiently random string.
-  PUBSUB_VERIFICATION_TOKEN: '<YOUR_VERIFICATION_TOKEN>'
-#[END env]
+runtime: python27
+api_version: 1
+threadsafe: yes
 
 handlers:
-  # This configures Google App Engine to serve the files in the app's static
-  # directory.
-- url: /static
-  static_dir: static
+- url: .*
+  script: main.app
 
-  # This handler routes all requests not caught above to your main app. It is
-  # required when static routes are defined, but can be omitted (along with
-  # the entire handlers section) when there are no static files defined.
-- url: /.*
-  script: auto
+libraries:
+- name: setuptools
+  version: 36.6.0
+- name: grpcio
+  version: 1.0.0
+- name: ssl
+  version: latest
+
+env_variables:
+  PUBSUB_TOPIC: '<YOUR_TOPIC>'
+  PUBSUB_VERIFICATION_TOKEN: '<YOUR_VERIFICATION_TOKEN>'
+  GOOGLE_CLOUD_PROJECT: '<YOUR_PROJECT_ID>'

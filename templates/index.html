@@ -17,7 +17,7 @@
 
 <html>
 <head>
-  <title>Datastore and Firebase Auth Example</title>
+  <title>Control</title>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -32,5 +32,37 @@
   {% endfor %}
   <!-- [END gae_python3_datastore_print_times] -->
   <!-- [END gae_python38_datastore_print_times] -->
+
+  <br>
+
+  <div>
+    <p>Print BEARER TOKENS:
+      <ul>
+        {% for token in tokens: %}
+          <li>{{token}}</li>
+        {% endfor %}
+      </ul>
+    </p>
+    <p>Print CLAIMS:
+      <ul>
+        {% for claim in claims: %}
+          <li>{{claim}}</li>
+        {% endfor %}
+      </ul>
+    </p>
+    <p>Messages received by this instance:</p>
+    <ul>
+      {% for message in messages: %}
+        <li>{{message}}</li>
+      {% endfor %}
+    </ul>
+    <p><small>Note: because your application is likely running multiple instances, each instance will have a different list of messages.</small></p>
+  </div>
+  <!-- [START form] -->
+  <form method="post">
+    <textarea name="payload" placeholder="Enter message here"></textarea>
+    <input type="submit">
+  </form>
+  <!-- [END form] -->
 </body>
 </html>
